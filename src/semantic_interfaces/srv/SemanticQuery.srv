@@ -1,0 +1,4 @@
+# SemanticQuery.srv
+string object
+---
+semantic_interfaces/SemanticObservation[] observations

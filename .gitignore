@@ -1,0 +1,28 @@
+# ROS2 build artifacts
+build/
+install/
+log/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Hidden build dirs (eğer oluşuyorsa)
+.build/
+.install/
+.log/
+
+# Editor / OS junk (opsiyonel ama önerilir)
+.vscode/
+.idea/
+.DS_Store
+
+# Virtual environment and YOLO
+.env
+venv/
+runs/
+datasets/
+yolov8n.pt
+yolo26n.pt
+*.engine
