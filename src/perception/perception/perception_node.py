@@ -9,10 +9,13 @@ import math
 import rclpy
 from rclpy.node import Node
 
+from tf2_ros import Buffer, TransformListener
 from cv_bridge import CvBridge
 from ultralytics import YOLO
 
+from tf2_geometry_msgs.tf2_geometry_msgs import do_transform_pose_stamped
 from sensor_msgs.msg import Image, LaserScan, CameraInfo
+from geometry_msgs.msg import PoseStamped
 from semantic_interfaces.msg import SemanticObservation
 
 
@@ -36,7 +39,7 @@ class PerceptionNode(Node):
         super().__init__('perception_node')
 
         # Parameters
-        self.declare_parameter("yolo_model_path", "yolov8n.pt")
+        self.declare_parameter("yolo_model_path", "weights/yolov8n.pt")
         self.declare_parameter("image_size", 640)
         self.declare_parameter("conf_threshold", 0.35)
 
@@ -50,6 +53,8 @@ class PerceptionNode(Node):
 
         # Others
         self.cv_bridge = CvBridge()
+        self.tf_buffer = Buffer()
+        self.tf_transform = TransformListener(self.tf_buffer, self)
         self.model_path = self.get_parameter("yolo_model_path").value
         self.model = YOLO(self.model_path)
         self.imgsz = self.get_parameter("image_size").value
@@ -84,6 +89,9 @@ class PerceptionNode(Node):
         """
         A callback for object detection.
         """
+
+        # Create transform msg
+        tf_msg = PoseStamped()
 
         # Convert ros image to numpy array
         img = self.cv_bridge.imgmsg_to_cv2(img_msg=msg, desired_encoding="bgr8")
@@ -156,10 +164,46 @@ class PerceptionNode(Node):
                 distances = self.last_scan.ranges[min_index:max_index]
             distances = list(filter(is_valid, distances))
             distance = min(distances) if distances else None
+            
+            # Handle the edge case
+            if distance is None:
+                continue
 
             print(f"Distance: {distance}")
 
+            # Transform polar coorfinates to cartesian coordinates
+            x = distance * math.cos(angle)
+            y = distance * math.sin(angle)
 
+            # Fill out the PoseStamped (tf_msg) message fields
+            tf_msg.header.frame_id = "base_link"
+            tf_msg.header.stamp = self.get_clock().now().to_msg()
+            tf_msg.pose.position.x = x
+            tf_msg.pose.position.y = y
+            tf_msg.pose.position.z = 0.0
+
+            # Transform pose in map frame from base link
+            try:
+                transform = self.tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time())
+                pose_in_map = do_transform_pose_stamped(tf_msg, transform)
+
+                print(f"X: {pose_in_map.pose.position.x}  Y: {pose_in_map.pose.position.y}")
+
+                # Fill out the fields of message to publish in this case SemanticObservation
+                obs = SemanticObservation()
+                obs.label = self.model.names[int(box.cls)]
+                obs.confidence = box.conf[0].item()
+                obs.pose = pose_in_map
+
+                # Publish the message
+                self.pub.publish(msg=obs)
+
+            except Exception as e:
+                self.get_logger().warn(f"TF lookup failed: {e}")
+                continue
+            
+
+# Main function to simulate node lifecycle
 def main(args=None):
     """
     Main function that handles node lifecycle.
@@ -173,5 +217,6 @@ def main(args=None):
     rclpy.shutdown()
 
 
+# Call the main function to run node
 if __name__ == "__main__":
     main()
