@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'semantic_map_node = semantic_map.semantic_map_node:main',
         ],
     },
 )
