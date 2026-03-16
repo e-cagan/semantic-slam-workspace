@@ -7,6 +7,7 @@ import math
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, DurabilityPolicy
 
 from semantic_interfaces.msg import SemanticObservation, SemanticMap
 from semantic_interfaces.srv import SemanticQuery
@@ -23,11 +24,14 @@ class SemanticMapNode(Node):
         # Parameters
         self.declare_parameter("distance_threshold", 0.5)
 
+        # Qos
+        self.qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+
         # Publishers
-        self.sem_pub = self.create_publisher(SemanticMap, '/semantic/map_data', 10)
+        self.sem_pub = self.create_publisher(SemanticMap, '/semantic/map_data', self.qos)
         
         # Subscribers
-        self.sem_sub = self.create_subscription(SemanticObservation, '/semantic/observations', self.observation_callback, 10)
+        self.sem_sub = self.create_subscription(SemanticObservation, '/semantic/observations', self.observation_callback, self.qos)
         
         # Services
         self.query_srv = self.create_service(SemanticQuery, '/semantic/query', self.query_callback)

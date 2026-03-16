@@ -8,6 +8,7 @@ import math
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, DurabilityPolicy
 
 from tf2_ros import Buffer, TransformListener
 from cv_bridge import CvBridge
@@ -43,8 +44,11 @@ class PerceptionNode(Node):
         self.declare_parameter("image_size", 640)
         self.declare_parameter("conf_threshold", 0.35)
 
+        # Qos
+        self.qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+
         # Publishers
-        self.pub = self.create_publisher(SemanticObservation, "/semantic/observations", 10)
+        self.pub = self.create_publisher(SemanticObservation, "/semantic/observations", self.qos)
 
         # Subscribers
         self.img_sub = self.create_subscription(Image, "/camera/image_raw", self.image_callback, 10)

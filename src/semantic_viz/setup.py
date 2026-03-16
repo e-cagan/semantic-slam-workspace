@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'semantic_viz_node = semantic_viz.semantic_viz_node:main',
         ],
     },
 )
