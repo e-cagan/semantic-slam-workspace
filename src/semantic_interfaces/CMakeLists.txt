@@ -13,6 +13,7 @@ find_package(std_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SemanticObservation.msg"
+  "msg/SemanticMap.msg"
   "srv/SemanticQuery.srv"
   DEPENDENCIES std_msgs geometry_msgs
 )

@@ -8,7 +8,7 @@ import math
 import rclpy
 from rclpy.node import Node
 
-from semantic_interfaces.msg import SemanticObservation
+from semantic_interfaces.msg import SemanticObservation, SemanticMap
 from semantic_interfaces.srv import SemanticQuery
 
 
@@ -22,6 +22,9 @@ class SemanticMapNode(Node):
         
         # Parameters
         self.declare_parameter("distance_threshold", 0.5)
+
+        # Publishers
+        self.sem_pub = self.create_publisher(SemanticMap, '/semantic/map_data', 10)
         
         # Subscribers
         self.sem_sub = self.create_subscription(SemanticObservation, '/semantic/observations', self.observation_callback, 10)
@@ -32,6 +35,22 @@ class SemanticMapNode(Node):
         # Internal state
         self.distance_threshold = self.get_parameter("distance_threshold").value
         self.semantic_map = dict()
+
+    
+    def publish_map(self):
+        """
+        A helper function that publishes the map.
+        """
+        
+        map_msg = SemanticMap()
+        
+        # Take all observations
+        all_observations = []
+        for obs_list in self.semantic_map.values():
+            all_observations.extend(obs_list)
+        map_msg.observations = all_observations
+        
+        self.sem_pub.publish(map_msg)
     
 
     def observation_callback(self, msg):
@@ -57,9 +76,16 @@ class SemanticMapNode(Node):
             else:
                 self.semantic_map[msg.label].append(msg)
                 print(f"New {msg.label} added.")
+
+                # Publish the map consisting of observations
+                self.publish_map()
+                
         else:
             self.semantic_map[msg.label] = [msg]
             print(f"Label {msg.label} added to the dict.")
+
+            # Publish the map consisting of observations
+            self.publish_map()
 
     
     def query_callback(self, request, response):
