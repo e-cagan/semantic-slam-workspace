@@ -78,6 +78,24 @@ class LLMNavNode(Node):
 
         # Return only label
         return output[0]['generated_text'].strip().lower()
+    
+
+    def query_response_callback(self, future):
+        """
+        Callback to handle query response.
+        """
+
+        # Take response and observations
+        response = future.result()
+        observations = response.observations
+
+        # Check the observations are empty
+        if len(observations) == 0:
+            pass
+        else:
+            # Take first observation pose
+            pose = observations[0].pose
+            print(pose)
 
 
     def command_callback(self, msg):
@@ -88,6 +106,10 @@ class LLMNavNode(Node):
         # Get label and log it
         label = self.parse_command(msg.data)
         self.get_logger().info(f"Parsed label: {label}")
+
+        # Send the request
+        future = self.send_request(label)
+        future.add_done_callback(self.query_response_callback)
 
 
 # Main function to simulate node lifecycle
