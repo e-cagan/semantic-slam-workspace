@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'llm_navigator_node = llm_navigator.llm_navigator_node:main',
         ],
     },
 )
