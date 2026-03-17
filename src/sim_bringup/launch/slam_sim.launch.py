@@ -4,6 +4,9 @@ Launch file for implementing SLAM to localize and create a map afterwards.
 
 import os
 
+# Set tb3 model
+os.environ['TURTLEBOT3_MODEL'] = 'waffle'
+
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch_ros.actions import Node
@@ -69,20 +72,24 @@ def generate_launch_description():
         spawn_turtlebot_cmd,
 
         # Open slam toolbox launch file (use simulation time)
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory('slam_toolbox'), 'launch', 'online_async_launch.py')
-            ),
-            launch_arguments={'use_sim_time': 'true'}.items()
-        ),
+        # IncludeLaunchDescription(
+        #    PythonLaunchDescriptionSource(
+        #        os.path.join(get_package_share_directory('slam_toolbox'), 'launch', 'online_async_launch.py')
+        #    ),
+        #    launch_arguments={'use_sim_time': 'true'}.items()
+        # ),
+
+        # Slam and nav2 can't work simultaneously together
 
         # Open rviz node to visualize
-        Node(
-            name='rviz_node',
-            package='rviz2',
-            executable='rviz2',
-            parameters=[{'use_sim_time': True}]
-        ),
+        # Node(
+        #    name='rviz_node',
+        #    package='rviz2',
+        #    executable='rviz2',
+        #    parameters=[{'use_sim_time': True}]
+        # ),
+
+        # Also, rvizes are conflicting in here and in nav2 launch file
 
         # Open teleop node to move robot
         Node(

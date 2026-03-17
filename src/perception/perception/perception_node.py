@@ -188,7 +188,11 @@ class PerceptionNode(Node):
 
             # Transform pose in map frame from base link
             try:
-                transform = self.tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time())
+                transform = self.tf_buffer.lookup_transform(
+                    target_frame='map', source_frame='base_link', 
+                    time=rclpy.time.Time(),
+                    timeout=rclpy.duration.Duration(seconds=0.1)
+                )
                 pose_in_map = do_transform_pose_stamped(tf_msg, transform)
 
                 print(f"X: {pose_in_map.pose.position.x}  Y: {pose_in_map.pose.position.y}")

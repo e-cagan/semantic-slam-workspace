@@ -7,7 +7,6 @@ import transformers
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
-from rclpy.qos import QoSProfile, DurabilityPolicy
 
 from nav2_msgs.action import NavigateToPose
 from semantic_interfaces.srv import SemanticQuery
@@ -53,6 +52,20 @@ class LLMNavNode(Node):
         return self.query_client.call_async(self.req)
     
 
+    def send_goal(self, pose):
+        """
+        A helper function that allows to send goal to nav2 action server.
+        """
+
+        goal = NavigateToPose.Goal()
+        goal.pose = pose
+
+        # Wait for action server to be ready
+        self.nav_action_client.wait_for_server(timeout_sec=60)
+
+        self.nav_action_client.send_goal_async(goal=goal)
+
+
     def parse_command(self, command):
         """
         A helper function which parses user's message to extract label.
@@ -91,11 +104,15 @@ class LLMNavNode(Node):
 
         # Check the observations are empty
         if len(observations) == 0:
-            pass
+            self.get_logger().warn(f"No observations found in semantic map.")
+            return
         else:
-            # Take first observation pose
+            # Take first observation pose and send nav2 goal
             pose = observations[0].pose
-            print(pose)
+            self.get_logger().info(f"Navigating to: x={pose.pose.position.x:.2f}, y={pose.pose.position.y:.2f}")
+
+            # Send goal to nav2 action server
+            self.send_goal(pose)
 
 
     def command_callback(self, msg):
